@@ -14,7 +14,7 @@ Error Log Analyzer aims to significantly improve incident identification and iss
 ## Getting Started
 **Note: This platform is designed for on-premises deployment in internal network environments. All data processing occurs within your infrastructure, ensuring sensitive data remains secure and never leaves your network.**
 
-##### 1\. Install Skyline Forecasting Server  <br>
+##### 1\. Install Error Log Analyzer Server  <br>
 **System Requirements:**
 - **Minimum Requirements**: 4 CPU cores, 16GB RAM, 40GB storage
 - **Optimal Configuration**: 8+ CPU cores, 32GB+ RAM, 40GB+ SSD storage

@@ -3,7 +3,6 @@
   "type": "app",
   "name": "Error-Log-Analyzer",
   "id": "skylineintelligence-errorloganalyzer-app",
-  "version": "1.0.0",
   "backend": true,
   "executable": "gpx_error_log_analyzer",
   "info": {
@@ -17,7 +16,7 @@
       "large": "img/logo.png"
     },
     "screenshots": [],
-    "version": "%VERSION%",
+    "version": "1.0.0",
     "updated": "%TODAY%"
   },
   "includes": [
