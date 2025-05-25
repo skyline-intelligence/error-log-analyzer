@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="assets/echarts-4.2.1-rc1.min.js"></script>
+    <script src="assets/layui/layui.js"></script>
+    <link rel="stylesheet" href="assets/layui/css/layui.css">
+    <title>Error Log Analysis</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px auto;
+        }
+        th, td {
+            border: 2px solid white;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .new_exception_highlight {
+            background-color: rgba(255, 99, 132, 0.2); /* Example background color */
+        }
+        .normal_highlight {
+            background-color: rgba(75, 192, 192, 0.2); /* Example background color */
+        }
+        .role_name_class {
+            color: black; /* Example text color */
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+<h1 id="analysis-title" class="aa"></h1>
+<table>
+    <tbody id="table-body">
+    <!-- Data will be populated here -->
+    </tbody>
+</table>
+<div class="page-wrapper">
+    <table id="mainTreeTable"></table>
+</div>
+
+<script>
+    $(document).ready(function() {
+
+        const queryString = window.location.search.substring(1);
+        params = parseQueryString(queryString);
+        var team = params['team'];
+        var from = params['from'];
+        var to = params['to'];
+        var roleNames = ["modular_home", "modular_link", "modular_search", "modular_list", "sdp_front_api", "sdp_domain", "cart_api", "cart_front_api", "checkout_front_api", "order_api", "order_consumer", "identity_web", "coupang_web", "coupang_cart_web"];
+        if (team != null && team == 'platform') {
+            console.log('Platform team');
+            roleNames = ["search_api", "listing_api", "materialization_api", "member_api", "auth_manager", "benefit"];
+        }
+
+        if(from == null || from == "undefined" || to == null || to == "undefined") {
+            var today = new Date();
+            to = 'now';
+            today.setDate(today.getDate() - 10);
+            from = formatDate(today);
+        }
+        // Function to fetch data from server
+        function updateChart() {
+            var now = new Date();
+            console.log('Start date:', from);
+            console.log("End date:", to);
+            var url = '/role_count_list?type=date&team=' + encodeURIComponent(team) + '&from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to);
+            console.log('URL:', url);
+            $.ajax({
+                url: url, // Replace with your server endpoint
+                method: 'GET',
+                success: function(data) {
+                    populateTable(data);
+                },
+                error: function(error) {
+                    console.error('Error fetching data:', error);
+                }
+            });
+        }
+
+        // Function to populate table with data
+        function populateTable(data) {
+            var tableBody = $('#table-body');
+            tableBody.empty(); // Clear existing data
+            var values = data.data;
+
+            for(var i = 0; i < roleNames.length; i++) {
+                var key = roleNames[i];
+                var value = values[key];
+                var tr = $('<tr></tr>');
+                tr.append('<td class="role_name_class" title="' + key + '"><a href="/realtime.html?role_name=' + encodeURIComponent(key) + '" target="_blank">' + key + '</a></td>');
+                value.forEach(function(row) {
+                    var cell_class = 'normal_highlight'
+                    var cell_style = '';
+                    if (row.isNewException == 'true') {
+                        cell_class = 'new_exception_highlight'
+                    }
+                    if (row.count > 1000) {
+                        cell_style = 'style="color: red; font-weight: bold;"';
+                    }
+                    var td = $('<td class="' + cell_class + '" ' + cell_style + ' style="width: 100px;">' + row.count + '</td>');
+                    td.on('click', function() {
+                        var tr = $(this).closest('tr');
+                        var role = tr.find('.role_name_class').attr('title');
+                        console.log('Cell clicked:', role, row.timestamp, row.count);
+                        showTreeTable(role, row.timestamp, 'date');
+                    });
+                    td.on('contextmenu', function(event) {
+                        event.preventDefault();
+                        var tr = $(this).closest('tr');
+                        var role = tr.find('.role_name_class').attr('title');
+                        showRightClickBox(event.pageX, event.pageY, role, row.timestamp, row.count);
+                    });
+                    td.hover(
+                        function(event) {
+                            // Mouse enter
+                            $(this).css('background-color', '#f0f0f0');
+                            showTooltip(event.pageX, event.pageY, row.timestamp, key, row.count);
+                        },
+                        function() {
+                            // Mouse leave
+                            $(this).css('background-color', '');
+                        }
+                    );
+                    tr.append(td);
+                });
+                tableBody.append(tr);
+            }
+
+            var tr = $('<tr></tr>');
+            tr.append('<td></td>');
+            for(var i=0;;i++) {
+                const nextDay = new Date(from);
+                nextDay.setDate(nextDay.getDate() + i);
+                if (nextDay > new Date(to)) {
+                    break;
+                }
+                var month = nextDay.getMonth() + 1;
+                if (month < 10) {
+                    month = '0' + month;
+                }
+                var day = nextDay.getDate();
+                if (day < 10) {
+                    day = '0' + day;
+                }
+                var date = month + '/' + day;
+                tr.append('<td>' + date + '</td>');
+            }
+            tableBody.append(tr);
+        }
+
+        function formatDate(date) {
+            var year = date.getFullYear();
+            var month = (date.getMonth() + 1).toString().padStart(2, '0');
+            var day = date.getDate().toString().padStart(2, '0');
+            return year + '-' + month + '-' + day;
+        }
+
+        // Function to show tooltip
+        function showTooltip(x, y, timestamp, role_name, count) {
+            // Remove any existing tooltip
+            $('.custom-tooltip').remove();
+
+            // Create tooltip element
+            var tooltip = $('<div class="custom-tooltip"></div>');
+            tooltip.css({
+                position: 'absolute',
+                top: y + 'px',
+                left: x + 'px',
+                background: '#fff',
+                border: '1px solid #ccc',
+                padding: '10px',
+                'z-index': 1000
+            });
+
+            // Add content to tooltip
+            tooltip.text('Timestamp: ' + timestamp + ', Count: ' + count);
+
+            // Append tooltip to body
+            $('body').append(tooltip);
+        }
+
+        // Function to show tooltip
+        function showRightClickBox(x, y, key, timestamp, count) {
+            // Remove any existing tooltip
+            $('.right-click-tooltip').remove();
+
+            // Create tooltip element
+            var tooltip = $('<div class="right-click-tooltip"></div>');
+            tooltip.css({
+                position: 'absolute',
+                top: y + 'px',
+                left: x + 'px',
+                background: '#fff',
+                border: '1px solid #ccc',
+                padding: '10px',
+                'z-index': 1000
+            });
+
+            // Add link to tooltip
+            var link = $('<a href="/hour.html?role_name=' + encodeURIComponent(key) + '&from=' + encodeURIComponent(timestamp) + '&type=hour">Deep Dive</a>');
+            tooltip.append(link);
+
+            // Append tooltip to body
+            $('body').append(tooltip);
+
+            // Remove tooltip on click outside
+            $(document).on('click', function() {
+                tooltip.remove();
+            });
+        }
+
+        function parseQueryString(queryString) {
+            let params = {};
+            let queries = queryString.split('&');
+            queries.forEach(query => {
+                let [key, value] = query.split('=');
+                params[key] = decodeURIComponent(value);
+            });
+            return params;
+        }
+
+        function showTreeTable(role_name, timestamp, type) {
+            layui.config({
+                base: 'assets/'
+            }).extend({
+                treeTable: 'treeTable/treeTable'
+            }).use(['layer', 'util', 'treeTable'], function () {
+                var $ = layui.jquery;
+                var layer = layui.layer;
+                var util = layui.util;
+                var treeTable = layui.treeTable;
+
+                // Create and render the demoTreeTable1
+                instanceTreeTable = treeTable.render({
+                    elem: '#mainTreeTable',
+                    tree: {
+                        iconIndex: 0
+                    },
+                    cols: [
+                        {
+                            field: 'quantity', title: 'Quantity', width: 180, templet: function (d) {
+                                if (d.newException == 'true') {
+                                    return '<div style="background-color: #F097A8; color: white;">' + d.quantity + '</div>';
+                                } else {
+                                    return '<div">' + d.quantity + '</div>';
+                                }
+                            }
+                        },
+                        {
+                            field: 'message',
+                            title: 'Message',
+                            singleLine: false,
+                            class: 'break-all',
+                            templet: function (d) {
+                                if (d.newException == 'true') {
+                                    return '<div style="background-color: #F097A8; color: white; text-align: left;">' + d.message + '</div>';
+                                } else {
+                                    return '<div style="text-align: left;">' + d.message + '</div>';
+                                }
+                            }
+                        },
+                    ],
+                    reqData: function (data, callback) {
+                        url_address = '/getSpecficData?specfic_date=' + encodeURIComponent(timestamp) + '&role_name=' + role_name + '&type=' + type;
+                        console.log('url_address:', url_address);
+                        $.get(url_address, function (res) {
+                            callback(res.data);
+                        });
+                    },
+                    style: 'margin-top:0;',
+                    getIcon: function (d) {  // 自定义图标
+                        // d是当前行的数据
+                        if (d.haveChild) {  // 判断是否有子集
+                            return '<i class="ew-tree-icon ew-tree-icon-folder"></i>';
+                        } else {
+                            return '<i class="ew-tree-icon ew-tree-icon-file"></i>';
+                        }
+                    }
+                });
+            });
+        }
+
+        var title = document.getElementById('analysis-title');
+        title.innerHTML = `<a href="/realtimeIndex.html?team=${encodeURIComponent(team)}" target="_blank">Error Log Analysis</a>`;
+
+        // Initial chart update
+        updateChart();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>exception table</title>
+    <link rel="stylesheet" href="assets/layui/css/layui.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #myBarChart {
+            width: 80% !important;
+            height: 400px !important;
+        }
+    </style>
+</head>
+<body class="page-no-scroll">
+
+<!-- Add a canvas element for the bar graph -->
+<!-- Add a container for the bar graph -->
+<div class="chart-container">
+    <canvas id="myBarChart"></canvas>
+</div>
+
+<div class="page-wrapper">
+    <table id="demoTreeTable1"></table>
+</div>
+
+<div class="page-loading">
+    <div class="ball-loader sm">
+        <span></span><span></span><span></span><span></span>
+    </div>
+</div>
+
+<script src="assets/layui/layui.js"></script>
+<script>
+    layui.config({
+        base: 'assets/'
+    }).extend({
+        treeTable: 'treeTable/treeTable'
+    }).use(['layer', 'util', 'treeTable'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var util = layui.util;
+        var treeTable = layui.treeTable;
+
+        $('body').children('.page-loading').hide();
+        $('body').removeClass('page-no-scroll');
+
+        function parseQueryString(queryString) {
+            let params = {};
+            let queries = queryString.split('&');
+            queries.forEach(query => {
+                let [key, value] = query.split('=');
+                params[key] = decodeURIComponent(value);
+            });
+            return params;
+        }
+
+        // Data for the bar chart
+        var label_data = null;
+        var data_set = null;
+        const queryString = window.location.search.substring(1);
+        params = parseQueryString(queryString);
+        role_name = params['role_name'];
+        type = params['type'];
+        $.getJSON('/timeseries_bar?' + queryString, function(data) {
+            label_data = data.data['labels'];
+            data_set = data.data['dataset'];
+            new_exception = data.data['new_exception'];
+            console.log(new_exception)
+
+            // Define colors for each bar
+            var backgroundColors = data_set.map((_, index) => {
+                if(new_exception[index] == 'true') {
+                    return 'rgba(160, 82, 45, 0.2)';
+                } else {
+                    return 'rgba(75, 192, 192, 0.2)';
+                }
+            });
+            var borderColors = data_set.map((_, index) => {
+                if(new_exception[index] == 'true') {
+                    return 'rgba(160, 82, 45, 0.2)';
+                } else {
+                    return 'rgba(75, 192, 192, 0.2)';
+                }
+            });
+
+            var barChartData = {
+                labels: label_data,
+                datasets: [{
+                    label: 'Quantity of Exception',
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1,
+                    data: data_set
+                }]
+            };
+
+            // Render the bar chart
+            var ctx = document.getElementById('myBarChart').getContext('2d');
+            var myBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: barChartData,
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    onClick: function(event, elements) {
+                        console.log("Clicked");
+                        console.log(event);
+                        console.log(elements);
+                        if (elements.length > 0) {
+                            var index = elements[0].index + 1;
+                            var label = label_data[index];
+                            var value = data_set[index];
+                            console.log('Clicked bar:', label, value);
+
+                            // Create and render the demoTreeTable1
+                            var insTb = treeTable.render({
+                                elem: '#demoTreeTable1',
+                                tree: {
+                                    iconIndex: 0
+                                },
+                                cols: [
+                                    {field: 'quantity', title: 'Quantity', width: 140, templet: function(d) {
+                                            if (d.newException == 'true') {
+                                                return '<div style="background-color: #A0522D; color: white;">' + d.quantity + '</div>';
+                                            } else {
+                                                return '<div">' + d.quantity + '</div>';
+                                            }
+                                        }},
+                                    {field: 'message', title: 'Message', singleLine: false, class:'break-all', templet: function(d) {
+                                            if (d.newException == 'true') {
+                                                return '<div style="background-color: #A0522D; color: white;">' + d.message + '</div>';
+                                            } else {
+                                                return '<div">' + d.message + '</div>';
+                                            }
+                                        }},
+                                ],
+                                reqData: function (data, callback) {
+                                    url_address = '/getSpecficData?specfic_date=' + label + '&role_name=' + role_name + '&type=' + type;
+                                    $.get(url_address, function (res) {
+                                        callback(res.data);
+                                    });
+                                },
+                                style: 'margin-top:0;',
+                                getIcon: function(d) {  // 自定义图标
+                                    // d是当前行的数据
+                                    if (d.haveChild) {  // 判断是否有子集
+                                        return '<i class="ew-tree-icon ew-tree-icon-folder"></i>';
+                                    } else {
+                                        return '<i class="ew-tree-icon ew-tree-icon-file"></i>';
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                }
+            });
+
+        });
+
+    });
+</script>
+</body>
+</html>

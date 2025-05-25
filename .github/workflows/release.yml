@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions: 
+  id-token: write 
+  contents: write 
+  attestations: write 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      
+      - name: Extract version from plugin.json
+        id: extract_version
+        run: |
+          VERSION=$(grep -o '"version": *"[^"]*"' src/plugin.json | grep -o '"[^"]*"$' | tr -d '"')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION"
+          
+      - name: Verify tag matches plugin version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          EXPECTED_TAG="v$VERSION"
+          echo "Current tag: $TAG_NAME"
+          echo "Expected tag based on plugin.json: $EXPECTED_TAG"
+          if [ "$TAG_NAME" != "$EXPECTED_TAG" ]; then
+            echo "::error::Tag name ($TAG_NAME) does not match plugin version ($EXPECTED_TAG)"
+            exit 1
+          fi
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - uses: grafana/plugin-actions/build-plugin@main
+        with:
+          policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          attestation: true
+
+      - name: Wait for GitHub to process the tag
+        run: sleep 15
+          
+      - name: Delete existing release if it exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          gh release delete $TAG_NAME --yes || true
+          
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          ZIP_FILE=$(ls skylineintelligence-errorloganalyzer-app-*.zip | head -n 1)
+          SHA_FILE="${ZIP_FILE}.sha1"
+          
+          gh release create "$TAG_NAME" \
+            --title "Release $TAG_NAME" \
+            --generate-notes \
+            "$ZIP_FILE" "$SHA_FILE"

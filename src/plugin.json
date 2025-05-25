@@ -1,0 +1,93 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "Error-Log-Analyzer",
+  "id": "skylineintelligence-errorloganalyzer-app",
+  "backend": true,
+  "executable": "gpx_error_log_analyzer",
+  "info": {
+    "keywords": ["app"],
+    "description": "",
+    "author": {
+      "name": "Skylineintelligence"
+    },
+    "logos": {
+      "small": "img/logo.png",
+      "large": "img/logo.png"
+    },
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "includes": [
+    {
+      "type": "page",
+      "name": "Error Log Analyzer",
+      "path": "/a/%PLUGIN_ID%/two",
+      "addToNav": true,
+      "defaultNav": true
+    },
+    {
+      "type": "page",
+      "name": "Error Log Hours Analyzer",
+      "path": "/a/%PLUGIN_ID%/hour",
+      "addToNav": false,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
+      "name": "Error Log Minutes Analyzer",
+      "path": "/a/%PLUGIN_ID%/minute",
+      "addToNav": false,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
+      "name": "Real Time Error Log Analyzer",
+      "path": "/a/%PLUGIN_ID%/realtime",
+      "addToNav": true,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
+      "name": "Roles Setting",
+      "path": "/a/%PLUGIN_ID%/roles",
+      "addToNav": true,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
+      "name": "Keywords Grouping",
+      "path": "/a/%PLUGIN_ID%/rules",
+      "addToNav": true,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
+      "icon": "cog",
+      "name": "Configuration",
+      "path": "/plugins/%PLUGIN_ID%",
+      "role": "Admin",
+      "addToNav": true
+    },
+    {
+      "type": "js",
+      "name": "layui.js",
+      "path": "assets/layui.js"
+    },
+    {
+      "type": "css",
+      "name": "layui.css",
+      "path": "assets/css/layui.css"
+    },
+    {
+      "type": "js",
+      "name": "treeTable.js",
+      "path": "assets/treeTable/treeTable.js"
+    }
+  ],
+  "dependencies": {
+    "grafanaDependency": ">=10.4.0",
+    "plugins": []
+  }
+}

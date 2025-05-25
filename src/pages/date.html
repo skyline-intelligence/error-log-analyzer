@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ECharts</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@3.5.1/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="assets/layui/css/layui.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        .main {
+            width: 1200px;
+            height: 300px;
+            margin: 10px auto;
+            border: 1px solid #ddd;
+        }
+
+        /*<div id="main" style="width: 1200px;height:400px;position:absolute;top:10px"></div> */
+        /*默认长宽比0.75*/
+        .aa {
+            /*width: 200px;*/
+            /*height: 200px;*/
+            text-align: center;
+            /*background: #000;
+            color: #fff;
+            font-size: 28px;*/
+        }
+    </style>
+</head>
+<body>
+<h1 class="aa">Error Log Analysis</h1>
+<div id="main" class="main"></div>
+<div class="page-wrapper">
+    <table id="demoTreeTable1"></table>
+</div>
+<script src="assets/layui/layui.js"></script>
+<script type="text/javascript">
+    layui.config({
+        base: 'assets/'
+    }).extend({
+        treeTable: 'treeTable/treeTable'
+    });
+    // Add event listener to the select element
+    myChart = echarts.init(document.getElementById('main'));
+
+    var label_data = [];
+    var data_set = [];
+    var new_exception = [];
+    const queryString = window.location.search.substring(1);
+    params = parseQueryString(queryString);
+    var type = 'date';
+    var from = params['from'];
+    var to = params['to'];
+    var role_name = params['role_name'];
+    timeseries_url = '/timeseries_bar?role_name=' + role_name + '&type=' + type + '&from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to);
+
+    $.ajax({
+        type: "GET",
+        url: timeseries_url,
+        dataType: "json",
+        async: false,
+        success: function (result) {
+            console.log(result)
+            label_data = result.data['labels'];
+            data_set = result.data['dataset'];
+            new_exception = result.data['new_exception'];
+        },
+        error: function (errorMsg) {
+            alert("get data failed！");
+        }
+    });
+
+    var backgroundColors = new_exception.map((value, index) => {
+        return value == 'true' ? 'rgba(255, 99, 132, 0.2)' : 'rgba(75, 192, 192, 0.2)';
+    });
+
+    var option = {
+        tooltip: {
+            trigger: 'item',
+            formatter: function (params) {
+                return generateTooltip(params);
+            }
+        },
+        xAxis: {
+            data: label_data
+        },
+
+        yAxis: {
+            type: 'log',
+            minorTick: {
+                show: true
+            }
+        },
+        series: [{
+            type: 'bar',
+            data: data_set,
+            itemStyle: {
+                normal: {
+                    color: function (params) {
+                        return backgroundColors[params.dataIndex];
+                    }
+                }
+            }
+        }]
+    };
+
+    //remove default right-click menu
+    var main_bar_chart = document.getElementById('main');
+    main_bar_chart.oncontextmenu = function (event) {
+        event.preventDefault();
+        var pointInPixel = [event.offsetX, event.offsetY];
+        var pointInGrid = myChart.convertFromPixel({ seriesIndex: 0 }, pointInPixel);
+
+        if (pointInGrid) {
+            var xIndex = pointInGrid[0];
+            var label = label_data[xIndex];
+            var value = data_set[xIndex];
+            showRightClickBox(event.clientX, event.clientY, role_name, label, value);
+        }
+        return false;
+    };
+
+    myChart.setOption(option);
+
+    // Add click event listener
+    myChart.on('click', function (params) {
+        console.log('---------Clicked!----------');
+        console.log(params)
+        layui.use(['layer', 'util', 'treeTable'], function () {
+            var $ = layui.jquery;
+            var layer = layui.layer;
+            var util = layui.util;
+            var treeTable = layui.treeTable;
+
+            console.log('Clicked bar:', params);
+            var label = params.name;
+            var value = params.value;
+            console.log('Label:', label, 'Value:', value);
+
+            // Create and render the demoTreeTable1
+            var instanceTreeTable = treeTable.render({
+                elem: '#demoTreeTable1',
+                tree: {
+                    iconIndex: 0
+                },
+                cols: [
+                    {
+                        field: 'quantity', title: 'Quantity', width: 180, templet: function (d) {
+                            if (d.newException == 'true') {
+                                return '<div style="background-color: #F097A8; color: white;">' + d.quantity + '</div>';
+                            } else {
+                                return '<div">' + d.quantity + '</div>';
+                            }
+                        }
+                    },
+                    {
+                        field: 'message',
+                        title: 'Message',
+                        singleLine: false,
+                        class: 'break-all',
+                        templet: function (d) {
+                            if (d.newException == 'true') {
+                                return '<div style="background-color: #F097A8; color: white;">' + d.message + '</div>';
+                            } else {
+                                return '<div">' + d.message + '</div>';
+                            }
+                        }
+                    },
+                ],
+                reqData: function (data, callback) {
+                    url_address = '/getSpecficData?specfic_date=' + encodeURIComponent(label) + '&role_name=' + role_name + '&type=' + type;
+                    console.log('url_address:', url_address);
+                    $.get(url_address, function (res) {
+                        callback(res.data);
+                    });
+                },
+                style: 'margin-top:0;',
+                getIcon: function (d) {  // 自定义图标
+                    // d是当前行的数据
+                    if (d.haveChild) {  // 判断是否有子集
+                        return '<i class="ew-tree-icon ew-tree-icon-folder"></i>';
+                    } else {
+                        return '<i class="ew-tree-icon ew-tree-icon-file"></i>';
+                    }
+                }
+            });
+
+        });
+
+    });
+
+    function parseQueryString(queryString) {
+        let params = {};
+        let queries = queryString.split('&');
+        queries.forEach(query => {
+            let [key, value] = query.split('=');
+            params[key] = decodeURIComponent(value);
+        });
+        return params;
+    }
+
+    // Function to generate tooltip content with a link
+    function generateTooltip(params) {
+        var label = params.name;
+        var value = params.value;
+        var type = 'hour';
+        return `<div>
+                <p>Time: ${label}</p>
+                <p>Count: ${value}</p>
+            </div>`;
+    }
+
+    function showRightClickBox(x, y, key, timestamp, count) {
+        // Remove any existing tooltip
+        $('.right-click-tooltip').remove();
+
+        // Create tooltip element
+        var tooltip = $('<div class="right-click-tooltip"></div>');
+        tooltip.css({
+            position: 'absolute',
+            top: y + 'px',
+            left: x + 'px',
+            background: '#fff',
+            border: '1px solid #ccc',
+            padding: '10px',
+            'z-index': 1000
+        });
+
+        console.log('timestamp:', timestamp);
+        // Add link to tooltip
+        var link = $('<a href="/hour.html?role_name=' + encodeURIComponent(key) + '&from=' + encodeURIComponent(timestamp) + '&type=hour">Deep Dive</a>');
+        tooltip.append(link);
+
+        // Append tooltip to body
+        $('body').append(tooltip);
+
+        // Remove tooltip on click outside
+        $(document).on('click', function() {
+            tooltip.remove();
+        });
+    }
+    //end of layui
+</script>
+</body>
