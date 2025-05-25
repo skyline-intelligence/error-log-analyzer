@@ -6,8 +6,8 @@
   "backend": true,
   "executable": "gpx_error_log_analyzer",
   "info": {
-    "keywords": ["app"],
-    "description": "",
+    "keywords": ["Error Log Analyzsis", "Error Log Analyzer", "Error Log", "incident identification", "issue detection"],
+    "description": "Error Log Analyzer aims to significantly improve incident identification and issue detection.",
     "author": {
       "name": "Skylineintelligence"
     },
