@@ -69,21 +69,6 @@
       "path": "/plugins/%PLUGIN_ID%",
       "role": "Admin",
       "addToNav": true
-    },
-    {
-      "type": "js",
-      "name": "layui.js",
-      "path": "assets/layui.js"
-    },
-    {
-      "type": "css",
-      "name": "layui.css",
-      "path": "assets/css/layui.css"
-    },
-    {
-      "type": "js",
-      "name": "treeTable.js",
-      "path": "assets/treeTable/treeTable.js"
     }
   ],
   "dependencies": {
