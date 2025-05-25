@@ -9,8 +9,6 @@ Error Log Analyzer aims to significantly improve incident identification and iss
 - **Efficient Error Log Reduction**: It automates the time-consuming task of analyzing and grouping error logs for routine error reduction. By aggregating logs and identifying top error sources, it helps engineers focus their efforts on improving code and meeting error count targets more efficiently.
 - **Core Functionality**: The tool subscribes to error logs, parses and extracts keywords, groups and aggregates logs per minute, and stores this data. It provides dashboards for error count visualization and detailed error analysis, and offers new error detection signals for integration with CI/CD pipelines for automated rollbacks.
 
-![Landing Page](./img/error-log-landing-page.jpg)
-
 ## Getting Started
 **Note: This platform is designed for on-premises deployment in internal network environments. All data processing occurs within your infrastructure, ensuring sensitive data remains secure and never leaves your network.**
 
