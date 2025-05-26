@@ -209,7 +209,7 @@ function RealTimePage() {
                   }
                   
                   const isNewException = errorData.isNewException === 'true';
-                  const isHighCount = errorData.count > 1000;
+                  const isHighCount = errorData.count > 10;
                   
                   return (
                     <td 
