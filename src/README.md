@@ -55,7 +55,7 @@ services:
 ##### 2\. Install error log analyzer plugin  <br>
 Record the domain name or IP address of the analyzer server you just started. When starting the Grafana server, pass the analyzer server address as an environment variable to Grafana using the following command: (The pluginsDir can be customized accordingly)
 ```
-grafana cli --pluginsDir ./data/plugins --pluginUrl https://github.com/skyline-intelligence/analyzer/releases/download/v1.0.0/skylineintelligence-errorloganalyzer-app-1.0.0.zip --insecure plugins install skylineintelligence-errorloganalyzer-app
+grafana cli --pluginsDir ./data/plugins --pluginUrl https://github.com/skyline-intelligence/error-log-analyzer/releases/download/v1.0.0/skylineintelligence-errorloganalyzer-app-1.0.0.zip --insecure plugins install skylineintelligence-errorloganalyzer-app
 
 export GF_PLUGINS_ANALYZER_SERVER={your_analyzer_server_address}
 ./bin/grafana server
@@ -68,7 +68,7 @@ FROM grafana/grafana:latest
 
 USER root
 RUN mkdir -p /var/lib/grafana/plugins
-RUN grafana cli --pluginsDir /var/lib/grafana/plugins --pluginUrl https://github.com/skyline-intelligence/analyzer/releases/download/v1.0.0/skylineintelligence-errorloganalyzer-app-1.0.0.zip --insecure plugins install skylineintelligence-errorloganalyzer-app
+RUN grafana cli --pluginsDir /var/lib/grafana/plugins --pluginUrl https://github.com/skyline-intelligence/error-log-analyzer/releases/download/v1.0.0/skylineintelligence-errorloganalyzer-app-1.0.0.zip --insecure plugins install skylineintelligence-errorloganalyzer-app
 
 USER grafana
 ```
