@@ -3,7 +3,6 @@ import { Table, Typography, message } from 'antd';
 import { Column } from '@ant-design/plots';
 import type { TableColumnsType } from 'antd';
 import { getHttpRequest } from '../utils/api';
-import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
 
@@ -24,7 +23,6 @@ const MinutePage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
     const chartRef = useRef<HTMLDivElement>(null);
-    const navigate = useNavigate();
 
   useEffect(() => {
     const queryString = window.location.search.substring(1);
@@ -72,10 +70,6 @@ const MinutePage: React.FC = () => {
       message.error('获取数据失败！');
       setLoading(false);
     }
-  };
-
-  const generateTooltip = (params: any) => {
-    return `${params.name}: ${params.value}`;
   };
 
   const handleBarClick = async (label: string, value: number) => {
@@ -166,9 +160,7 @@ const MinutePage: React.FC = () => {
   return (
     <div style={{ padding: '20px' }}>
       <Title level={1} style={{ textAlign: 'center' }}>
-        <a href={`/realtime.html?role_name=${encodeURIComponent(parseQueryString(window.location.search.substring(1))['role_name'])}`} target="_blank" rel="noopener noreferrer">
-          {parseQueryString(window.location.search.substring(1))['role_name']} Error Log Analysis
-        </a>
+        {parseQueryString(window.location.search.substring(1))['role_name']} Error Log Analysis
       </Title>
       
       <div style={{ width: '1200px', height: '300px', margin: '10px auto', border: '1px solid #ddd' }} ref={chartRef}>

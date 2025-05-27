@@ -37,14 +37,6 @@ function PageTwo() {
   const navigate = useNavigate();
   const [range, setRange] = useState<[Dayjs | null, Dayjs | null]>([null, null]);
 
-  // Format date
-  const formatDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   const rangePresets: TimeRangePickerProps['presets'] = [
     { label: 'Last 20 days', value: [dayjs().subtract(20, 'day'), dayjs()] },
     { label: 'Last 30 days', value: [dayjs().subtract(30, 'day'), dayjs()] },
@@ -136,11 +128,13 @@ function PageTwo() {
       console.error('Loading grafana config failed :', error);
     });
 
+    const fromTime = dayjs().subtract(18, 'day').format('YYYY-MM-DD');
+    const toTime = dayjs().format('YYYY-MM-DD');
     // Use local variables directly
     const requestBody = {
       group: "default",
-      from: "2024-10-20",
-      to: "2024-11-08",
+      from: fromTime,
+      to: toTime,
       type: "date"
     };
     

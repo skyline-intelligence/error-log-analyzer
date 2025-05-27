@@ -79,10 +79,6 @@ const HourPage: React.FC = () => {
     }
   };
 
-  const generateTooltip = (params: any) => {
-    return `${params.name}: ${params.value}`;
-  };
-
   const handleBarClick = async (label: string, value: number) => {
     const queryString = window.location.search.substring(1);
     const params = parseQueryString(queryString);
@@ -186,9 +182,7 @@ const HourPage: React.FC = () => {
   return (
     <div style={{ padding: '20px' }}>
       <Title level={1} style={{ textAlign: 'center' }}>
-        <a href={`/realtime.html?role_name=${encodeURIComponent(parseQueryString(window.location.search.substring(1))['role_name'])}`} target="_blank" rel="noopener noreferrer">
-          {parseQueryString(window.location.search.substring(1))['role_name']} Error Log Analysis
-        </a>
+        {parseQueryString(window.location.search.substring(1))['role_name']} Error Log Analysis
       </Title>
       
       <div style={{ width: '1200px', height: '300px', margin: '10px auto', border: '1px solid #ddd' }} ref={chartRef}>
