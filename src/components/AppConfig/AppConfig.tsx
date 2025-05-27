@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LoadingPlaceholder } from '@grafana/ui';
-import { Alert, message, Input, Button } from 'antd';
+import { Alert, message, Input, Button, Modal } from 'antd';
 import { AppConfigProps, State } from './types';
 import GrafanaSettings from './GrafanaSettings';
 import { getBackendSrv } from '@grafana/runtime';
@@ -106,7 +106,10 @@ const AppConfig = ({ plugin }: AppConfigProps) => {
       const license = await fetchLicenseData();
       setLicenseData(license);
     } catch (error) {
-      message.error(`Failed to update license: ${error}`);
+      Modal.error({
+        title: 'Update License Failed',
+        content: `${error}`,
+      });
     } finally {
       setIsUpdatingLicense(false);
     }
